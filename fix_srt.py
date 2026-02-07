@@ -30,6 +30,6 @@ for srt in glob.glob("**/*.srt", recursive=True):
             for n, (st, ed, txt) in enumerate(subs, 1):
                 f.write(f"{n}\n{st} --> {ed}\n{txt}\n\n")
         
-        print(f"✓ {srt} -> {len(subs)}条")
+        print(f"✓ {srt} -> {len(subs)}lines")
     except:
         print(f"✗ {srt}")
