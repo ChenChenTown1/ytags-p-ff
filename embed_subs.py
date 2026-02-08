@@ -16,7 +16,7 @@ def get_main_part(filename):
         main_part = name
     
     patterns_to_remove = [
-        r'\[[^\]]+\]',  # YouTube ID
+        r'\[[^\]]+\]',
         r'\.en_fixed',
         r'\.zh_fixed',
         r'_fixed',
@@ -25,7 +25,6 @@ def get_main_part(filename):
         r'\.srt$',
         r'\.mp4$',
         r'\.MP4$',
-        r'\s+',
     ]
     
     for pattern in patterns_to_remove:
@@ -63,8 +62,6 @@ def find_best_mp4_for_srt(srt_file, all_mp4_files):
             score = 0.8
         elif mp4_main.lower() in srt_main.lower():
             score = 0.8
-        elif srt_main.lower()[:20] == mp4_main.lower()[:20]:
-            score = 0.6
         
         if score > best_score:
             best_score = score
@@ -105,10 +102,7 @@ def add_subtitles(mp4_file, srt_file, output_dir=None):
     
     try:
         result = subprocess.run(cmd, capture_output=True, text=True)
-        if result.returncode == 0:
-            return True
-        else:
-            return False
+        return result.returncode == 0
     except:
         return False
 
@@ -133,43 +127,33 @@ def main():
     
     print(f"MP4: {len(mp4_files)}, SRT: {len(srt_files)}")
     
-    if mp4_files:
-        print("MP4 files found:")
-        for mp4 in mp4_files:
-            clean = get_main_part(mp4.name)
-            print(f"  - {mp4.name}")
-            if clean:
-                print(f"    Main: '{clean}'")
-    
+    processed_mp4s = set()
     ok = 0
     fail = 0
     
     for srt in srt_files:
         srt_main = get_main_part(srt.name)
-        print(f"\n{srt.name}")
-        print(f"Main: '{srt_main}'")
         
         if not srt_main:
-            print("No main title extracted")
-            fail += 1
             continue
         
         best_mp4 = find_best_mp4_for_srt(srt, mp4_files)
         if not best_mp4:
-            print("No match found")
-            fail += 1
             continue
         
-        mp4_main = get_main_part(best_mp4.name)
-        print(f"Match: {best_mp4.name}")
-        print(f"MP4 Main: '{mp4_main}'")
+        if best_mp4 in processed_mp4s:
+            continue
+        
+        print(f"\n{srt.name}")
+        print(f"-> {best_mp4.name}")
         
         if add_subtitles(best_mp4, srt, args.o):
-            print("Success")
+            processed_mp4s.add(best_mp4)
             ok += 1
+            print("OK")
         else:
-            print("Failed")
             fail += 1
+            print("Fail")
     
     print(f"\nDone: {ok} OK, {fail} Fail")
 
