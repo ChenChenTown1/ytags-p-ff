@@ -14,6 +14,13 @@ def clean_name(filename):
     name = name.replace('.en', '').replace('.zh', '')
     return name.strip()
 
+def get_real_mp4_files(mp4_list):
+    real_files = []
+    for mp4 in mp4_list:
+        if not mp4.name.startswith('._'):
+            real_files.append(mp4)
+    return real_files
+
 def find_best_mp4_for_srt(srt_file, all_mp4_files):
     srt_path = Path(srt_file)
     srt_name_clean = clean_name(srt_path.name)
@@ -48,6 +55,7 @@ def add_subtitles(mp4_file, srt_file, output_dir=None):
         out_path = mp4_path.parent / f"{mp4_path.stem}_hardsub.mp4"
     
     if out_path.exists():
+        print("  Output exists, skipping")
         return False
     
     style = "FontName=SourceHanSansCN-Bold,FontSize=15,PrimaryColour=&H00FFFFFF,OutlineColour=&H66000000,BorderStyle=3"
@@ -64,12 +72,20 @@ def add_subtitles(mp4_file, srt_file, output_dir=None):
     ]
     
     try:
+        print(f"  Running ffmpeg...")
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode == 0:
+            print(f"  Success")
             return True
         else:
+            print(f"  Failed")
+            if result.stderr:
+                for line in result.stderr.split('\n')[-5:]:
+                    if line.strip():
+                        print(f"    {line}")
             return False
-    except:
+    except Exception as e:
+        print(f"  Exception: {e}")
         return False
 
 def main():
@@ -83,32 +99,38 @@ def main():
     path = Path(args.dir)
     
     if args.r:
-        mp4_files = list(path.rglob('*.mp4')) + list(path.rglob('*.MP4'))
+        all_mp4_files = list(path.rglob('*.mp4')) + list(path.rglob('*.MP4'))
         srt_files = list(path.rglob('*_fixed.srt')) + list(path.rglob('*_fixed.SRT'))
     else:
-        mp4_files = list(path.glob('*.mp4')) + list(path.glob('*.MP4'))
+        all_mp4_files = list(path.glob('*.mp4')) + list(path.glob('*.MP4'))
         srt_files = list(path.glob('*_fixed.srt')) + list(path.glob('*_fixed.SRT'))
     
+    mp4_files = get_real_mp4_files(all_mp4_files)
+    
     print(f"MP4: {len(mp4_files)}, SRT: {len(srt_files)}")
+    
+    if mp4_files:
+        print("Available MP4 files:")
+        for mp4 in mp4_files:
+            print(f"  - {mp4.name}")
     
     ok = 0
     fail = 0
     
     for srt in srt_files:
+        print(f"\n{srt.name}")
+        
         best_mp4 = find_best_mp4_for_srt(srt, mp4_files)
         if not best_mp4:
-            print(f"No match: {srt.name}")
+            print(f"No match found")
             fail += 1
             continue
         
-        print(f"\n{srt.name}")
-        print(f"Matched: {best_mp4.name}")
+        print(f"Match: {best_mp4.name}")
         
         if add_subtitles(best_mp4, srt, args.o):
-            print("Success")
             ok += 1
         else:
-            print("Failed")
             fail += 1
     
     print(f"\nDone: {ok} OK, {fail} Fail")
