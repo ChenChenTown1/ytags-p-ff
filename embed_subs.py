@@ -1,53 +1,94 @@
 #!/usr/bin/env python3
-import os, subprocess, glob
 
-def embed_all():
-    mp4_files = glob.glob('**/*.mp4', recursive=True)
-    srt_files = glob.glob('**/*_fixed.srt', recursive=True)
+import subprocess
+import argparse
+from pathlib import Path
+from difflib import SequenceMatcher
+
+def find_mp4_for_srt(srt_file):
+    srt_path = Path(srt_file)
+    srt_name = srt_path.stem.replace('_fixed', '')
     
-    if not mp4_files:
-        print('No MP4 files found')
-        return
+    for mp4 in srt_path.parent.glob('*.mp4'):
+        mp4_name = mp4.stem
+        score = SequenceMatcher(None, srt_name.lower(), mp4_name.lower()).ratio()
+        if srt_name.lower() in mp4_name.lower():
+            score += 0.2
+        if score > 0.3:
+            return mp4
+    return None
+
+def add_subtitles(mp4_file, srt_file, output_dir=None):
+    mp4_path = Path(mp4_file)
+    srt_path = Path(srt_file)
     
-    if not srt_files:
-        print('No _fixed.srt files found')
-        return
+    if output_dir:
+        out_path = Path(output_dir) / f"{mp4_path.stem}_hardsub.mp4"
+    else:
+        out_path = mp4_path.parent / f"{mp4_path.stem}_hardsub.mp4"
     
-    print(f'Found {len(mp4_files)} MP4 files, {len(srt_files)} SRT files\n')
+    if out_path.exists():
+        print(f"Skip: {out_path.name} exists")
+        return False
     
-    success = 0
-    for mp4 in mp4_files:
-        mp4_name = os.path.basename(mp4).replace('.mp4', '').lower()
+    style = "FontName=SourceHanSansCN-Bold,FontSize=15,PrimaryColour=&H00FFFFFF,OutlineColour=&H66000000,BorderStyle=3"
+    
+    cmd = [
+        'ffmpeg',
+        '-i', str(mp4_path),
+        '-vf', f"subtitles={repr(str(srt_path))}:force_style={repr(style)}",
+        '-c:v', 'libx264',
+        '-crf', '19',
+        '-c:a', 'copy',
+        '-y',
+        str(out_path)
+    ]
+    
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            print(f"OK: {mp4_path.name}")
+            return True
+        else:
+            print(f"Fail: {mp4_path.name}")
+            return False
+    except:
+        return False
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('dir', nargs='?', default='.')
+    parser.add_argument('-r', action='store_true')
+    parser.add_argument('-o')
+    
+    args = parser.parse_args()
+    
+    srt_files = []
+    path = Path(args.dir)
+    
+    if args.r:
+        srt_files = list(path.rglob('*_fixed.srt')) + list(path.rglob('*_fixed.SRT'))
+    else:
+        srt_files = list(path.glob('*_fixed.srt')) + list(path.glob('*_fixed.SRT'))
+    
+    ok = 0
+    fail = 0
+    
+    for srt in srt_files:
+        mp4 = find_mp4_for_srt(srt)
+        if not mp4:
+            print(f"No MP4 for {srt.name}")
+            fail += 1
+            continue
         
-        matching_srt = None
-        for srt in srt_files:
-            srt_name = os.path.basename(srt).replace('_fixed.srt', '').lower()
-            if mp4_name in srt_name or srt_name in mp4_name:
-                matching_srt = srt
-                break
+        print(f"\n{srt.name} -> {mp4.name}")
         
-        if matching_srt:
-            output = mp4.replace('.mp4', '_subtitled.mp4')
-            
-            cmd = [
-                'ffmpeg', '-i', mp4,
-                '-vf', f"subtitles='{matching_srt}':force_style='Alignment=2,Fontsize=24,MarginV=40'",
-                '-c:a', 'copy', '-y', output
-            ]
-            
-            print(f'Processing: {os.path.basename(mp4)}')
-            
-            try:
-                result = subprocess.run(cmd, capture_output=True, text=True)
-                if result.returncode == 0:
-                    print(f'Success: {os.path.basename(output)}\n')
-                    success += 1
-                else:
-                    print(f'Failed\n')
-            except:
-                print(f'Error\n')
+        if add_subtitles(mp4, srt, args.o):
+            ok += 1
+        else:
+            fail += 1
     
-    print(f'Completed: {success}/{len(mp4_files)}')
+    print(f"\nDone: {ok} OK, {fail} Fail")
 
 if __name__ == '__main__':
-    embed_all()
+    main()
