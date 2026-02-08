@@ -1,6 +1,5 @@
 # ytags-p-ff
-Stands for:
-<font color=#008000>youtube auto generated subs paraphraser for ffmpeg</font>
+stands for: youtube auto generated subs paraphraser for ffmpeg
 ### 记得star, 支持下
 
 ## 介绍:
