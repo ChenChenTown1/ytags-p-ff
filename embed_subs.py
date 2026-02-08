@@ -6,44 +6,73 @@ import re
 from pathlib import Path
 from difflib import SequenceMatcher
 
-def clean_name(filename):
+def extract_main_title(filename):
     name = str(filename)
-    name = re.sub(r'\[[^\]]+\]', '', name)
-    name = name.split('.')[0]
-    name = name.replace('_fixed', '')
-    name = name.replace('.en', '').replace('.zh', '')
+    
+    patterns_to_remove = [
+        r'\[[^\]]+\]',  # 移除YouTube ID
+        r'\.en_fixed',  # 移除后缀
+        r'\.zh_fixed',
+        r'\.en',
+        r'\.zh',
+        r'_fixed',
+        r'\.srt$',
+        r'\.mp4$',
+        r'\.MP4$',
+    ]
+    
+    for pattern in patterns_to_remove:
+        name = re.sub(pattern, '', name)
+    
     return name.strip()
 
-def get_real_mp4_files(mp4_list):
-    real_files = []
-    for mp4 in mp4_list:
-        if not mp4.name.startswith('._'):
-            real_files.append(mp4)
-    return real_files
+def get_common_words(text):
+    words = re.findall(r'\b\w+\b', text.lower())
+    common_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'has', 'have', 'had', 'do', 'does', 'did', 'will', 'would', 'shall', 'should', 'may', 'might', 'must', 'can', 'could', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your', 'his', 'its', 'our', 'their', 'mine', 'yours', 'hers', 'ours', 'theirs'}
+    return [word for word in words if word not in common_words and len(word) > 2]
+
+def calculate_similarity(text1, text2):
+    text1_clean = extract_main_title(text1)
+    text2_clean = extract_main_title(text2)
+    
+    words1 = get_common_words(text1_clean)
+    words2 = get_common_words(text2_clean)
+    
+    if not words1 or not words2:
+        return 0
+    
+    common_count = len(set(words1) & set(words2))
+    total_unique = len(set(words1) | set(words2))
+    
+    if total_unique == 0:
+        return 0
+    
+    word_similarity = common_count / total_unique
+    
+    sequence_similarity = SequenceMatcher(None, text1_clean.lower(), text2_clean.lower()).ratio()
+    
+    return max(word_similarity, sequence_similarity)
 
 def find_best_mp4_for_srt(srt_file, all_mp4_files):
     srt_path = Path(srt_file)
-    srt_name_clean = clean_name(srt_path.name)
     
     best_match = None
     best_score = 0
     
     for mp4 in all_mp4_files:
-        mp4_name_clean = clean_name(mp4.name)
-        
-        score = SequenceMatcher(None, srt_name_clean.lower(), mp4_name_clean.lower()).ratio()
-        
-        if srt_name_clean.lower() in mp4_name_clean.lower():
-            score = max(score, 0.8)
-        
-        if mp4_name_clean.lower() in srt_name_clean.lower():
-            score = max(score, 0.8)
+        score = calculate_similarity(srt_path.name, mp4.name)
         
         if score > best_score:
             best_score = score
             best_match = mp4
     
-    return best_match if best_score > 0.5 else None
+    if best_score < 0.3:
+        return None
+    
+    return best_match
+
+def get_real_mp4_files(mp4_list):
+    return [mp4 for mp4 in mp4_list if not mp4.name.startswith('._')]
 
 def add_subtitles(mp4_file, srt_file, output_dir=None):
     mp4_path = Path(mp4_file)
@@ -55,7 +84,7 @@ def add_subtitles(mp4_file, srt_file, output_dir=None):
         out_path = mp4_path.parent / f"{mp4_path.stem}_hardsub.mp4"
     
     if out_path.exists():
-        print("  Output exists, skipping")
+        print("  Skip: exists")
         return False
     
     style = "FontName=SourceHanSansCN-Bold,FontSize=15,PrimaryColour=&H00FFFFFF,OutlineColour=&H66000000,BorderStyle=3"
@@ -72,20 +101,14 @@ def add_subtitles(mp4_file, srt_file, output_dir=None):
     ]
     
     try:
-        print(f"  Running ffmpeg...")
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode == 0:
-            print(f"  Success")
+            print("  Success")
             return True
         else:
-            print(f"  Failed")
-            if result.stderr:
-                for line in result.stderr.split('\n')[-5:]:
-                    if line.strip():
-                        print(f"    {line}")
+            print("  Failed")
             return False
-    except Exception as e:
-        print(f"  Exception: {e}")
+    except:
         return False
 
 def main():
@@ -110,23 +133,27 @@ def main():
     print(f"MP4: {len(mp4_files)}, SRT: {len(srt_files)}")
     
     if mp4_files:
-        print("Available MP4 files:")
+        print("MP4 files:")
         for mp4 in mp4_files:
+            clean = extract_main_title(mp4.name)
             print(f"  - {mp4.name}")
+            print(f"    Clean: {clean}")
     
     ok = 0
     fail = 0
     
     for srt in srt_files:
         print(f"\n{srt.name}")
+        print(f"Clean: {extract_main_title(srt.name)}")
         
         best_mp4 = find_best_mp4_for_srt(srt, mp4_files)
         if not best_mp4:
-            print(f"No match found")
+            print("No match")
             fail += 1
             continue
         
-        print(f"Match: {best_mp4.name}")
+        score = calculate_similarity(srt.name, best_mp4.name)
+        print(f"Match: {best_mp4.name} (score: {score:.2f})")
         
         if add_subtitles(best_mp4, srt, args.o):
             ok += 1
