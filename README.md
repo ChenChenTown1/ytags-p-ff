@@ -1,4 +1,6 @@
-# ysiol-ec
+# ytags-p-ff
+Stands for:
+Youtube auto generated subs paraphraser for ffmpeg
 ### 记得star, 支持下
 
 ## 介绍:
