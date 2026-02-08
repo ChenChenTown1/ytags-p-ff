@@ -2,25 +2,41 @@
 
 import subprocess
 import argparse
+import re
 from pathlib import Path
 from difflib import SequenceMatcher
 
+def clean_name(filename):
+    name = str(filename)
+    name = re.sub(r'\[[^\]]+\]', '', name)
+    name = name.split('.')[0]
+    name = name.replace('_fixed', '')
+    name = name.replace('.en', '').replace('.zh', '')
+    return name.strip()
+
 def find_best_mp4_for_srt(srt_file, all_mp4_files):
     srt_path = Path(srt_file)
-    srt_name = srt_path.stem.replace('_fixed', '')
+    srt_name_clean = clean_name(srt_path.name)
     
     best_match = None
     best_score = 0
     
     for mp4 in all_mp4_files:
-        mp4_name = mp4.stem
-        score = SequenceMatcher(None, srt_name.lower(), mp4_name.lower()).ratio()
+        mp4_name_clean = clean_name(mp4.name)
+        
+        score = SequenceMatcher(None, srt_name_clean.lower(), mp4_name_clean.lower()).ratio()
+        
+        if srt_name_clean.lower() in mp4_name_clean.lower():
+            score = max(score, 0.8)
+        
+        if mp4_name_clean.lower() in srt_name_clean.lower():
+            score = max(score, 0.8)
         
         if score > best_score:
             best_score = score
             best_match = mp4
     
-    return best_match if best_score > 0.1 else None
+    return best_match if best_score > 0.5 else None
 
 def add_subtitles(mp4_file, srt_file, output_dir=None):
     mp4_path = Path(mp4_file)
@@ -50,10 +66,8 @@ def add_subtitles(mp4_file, srt_file, output_dir=None):
     try:
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode == 0:
-            print(f"OK: {mp4_path.name}")
             return True
         else:
-            print(f"Fail: {mp4_path.name}")
             return False
     except:
         return False
@@ -87,11 +101,14 @@ def main():
             fail += 1
             continue
         
-        print(f"\n{srt.name} -> {best_mp4.name}")
+        print(f"\n{srt.name}")
+        print(f"Matched: {best_mp4.name}")
         
         if add_subtitles(best_mp4, srt, args.o):
+            print("Success")
             ok += 1
         else:
+            print("Failed")
             fail += 1
     
     print(f"\nDone: {ok} OK, {fail} Fail")
