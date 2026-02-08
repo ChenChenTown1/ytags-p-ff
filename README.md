@@ -8,6 +8,7 @@ stands for: youtube auto generated subs paraphraser for ffmpeg
 ## 要求
 ##### python ≥ 3.0
 ##### ffmpeg 都行 (我用的是8.0.1)
+##### 视频必须要是mp4, 字幕必须要是srt. (在用yt-dlp下载的时候都可以自定义)
 
 ## 使用方式:
 无需下载
