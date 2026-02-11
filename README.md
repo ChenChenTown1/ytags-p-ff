@@ -22,8 +22,11 @@ stands for: youtube auto generated subs paraphraser for ffmpeg
     curl -s https://raw.githubusercontent.com/ChenChenTown1/ytags-p-ff/refs/heads/main/fix_srt.py | python3 -
 
 ##### 3.等待处理完毕, 带有_fixed是处理完的
-##### 4.处理完字幕后, 要删除文件名里的语言后缀(比如.en), 用这个命令:
+##### 4.处理完字幕后, 要删除字幕文件名里的语言后缀(比如.en), 用这个命令:
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ChenChenTown1/ytags-p-ff/refs/heads/main/remove_langs_codes.sh)" || sh -c "$(wget -qO- https://raw.githubusercontent.com/ChenChenTown1/ytags-p-ff/refs/heads/main/remove_langs_codes.sh)"
+
+##### 5.还需删除字幕文件名里的youtube编号, 就是在[]里的一串字母
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ChenChenTown1/ytags-p-ff/refs/heads/main/remove_langs_codes.sh)" || sh -c "$(wget -qO- https://raw.githubusercontent.com/ChenChenTown1/ytags-p-ff/refs/heads/main/remove_youtube_number.sh)"
 
 ##### 用这个脚本进行合成(它会把名字最像的和带有_fixed的文件用ffmpeg合成):
     curl -s https://raw.githubusercontent.com/ChenChenTown1/ytags-p-ff/refs/heads/main/embed_subs.py | python3 -
