@@ -26,7 +26,7 @@ stands for: youtube auto generated subs paraphraser for ffmpeg
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ChenChenTown1/ytags-p-ff/refs/heads/main/remove_langs_codes.sh)" || sh -c "$(wget -qO- https://raw.githubusercontent.com/ChenChenTown1/ytags-p-ff/refs/heads/main/remove_langs_codes.sh)"
 
 ##### 5.还需删除字幕文件名里的youtube编号, 就是在[]里的一串字母
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ChenChenTown1/ytags-p-ff/refs/heads/main/remove_langs_codes.sh)" || sh -c "$(wget -qO- https://raw.githubusercontent.com/ChenChenTown1/ytags-p-ff/refs/heads/main/remove_youtube_number.sh)"
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ChenChenTown1/ytags-p-ff/refs/heads/main/remove_youtube_number.sh)" || sh -c "$(wget -qO- https://raw.githubusercontent.com/ChenChenTown1/ytags-p-ff/refs/heads/main/remove_youtube_number.sh)"
 
 ##### 用这个脚本进行合成(它会把名字最像的和带有_fixed的文件用ffmpeg合成):
     curl -s https://raw.githubusercontent.com/ChenChenTown1/ytags-p-ff/refs/heads/main/embed_subs.py | python3 -
