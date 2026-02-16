@@ -35,10 +35,10 @@ stands for: youtube auto generated subs paraphraser for ffmpeg
 
 ## Star History
 
-<a href="https://www.star-history.com/#ChenChenTown1/ysiol-ec&type=date&legend=top-left">
+<a href="https://www.star-history.com/#ChenChenTown1/ytags-p-ff&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ChenChenTown1/ysiol-ec&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=ChenChenTown1/ysiol-ec&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=ChenChenTown1/ysiol-ec&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ChenChenTown1/ytags-p-ff&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=ChenChenTown1/ytags-p-ff&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=ChenChenTown1/ytags-p-ff&type=date&legend=top-left" />
  </picture>
 </a>
