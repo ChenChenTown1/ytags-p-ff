@@ -9,9 +9,9 @@ stands for: youtube auto generated subs paraphraser for ffmpeg
 
 ## 要求
 ##### python ≥ 3.0
-##### ffmpeg 都行 (我用的是8.0.1)
-##### curl 都行
-##### wget 都行
+##### ffmpeg 版本都行 (我用的是8.0.1)
+##### curl 版本都行
+##### wget 版本都行
 ##### 视频必须要是mp4, 字幕必须要是srt. (在用yt-dlp下载的时候都可以自定义)
 ##### 要能执行sh文件就行
 
